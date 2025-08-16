@@ -104,25 +104,37 @@ public class LibraryManager {
     }
 
     public void returnedBook(String bookID) {
-        for (Loan loan : LOANS) {
+        Loan activeLoan = null;
+
+        for (int i = LOANS.size() - 1; i >= 0; i--) {
+            Loan loan = LOANS.get(i);
+            if (loan.getBookId().equals(bookID) && !loan.isReturned()) {
+                activeLoan = loan;
+                break;
+            }
+        }
+
+        if (activeLoan != null) {
+            activeLoan.setReturnDate(LocalDate.now());
+            Book book = findBookByID(bookID);
+            if (book != null) {
+                book.setAvailable(true);
+            }
+            saveAll();
+            System.out.println("Book " + bookID + " returned successfully on " + activeLoan.getReturnDate());
+            return;
+        }
+
+        for (int i = LOANS.size() - 1; i >= 0; i--) {
+            Loan loan = LOANS.get(i);
             if (loan.getBookId().equals(bookID)) {
-
-                if(loan.isReturned()){
-                    System.err.println("This book has already been returned on " + loan.getReturnDate());
-                    return;
-                }
-
-                loan.setReturnDate(LocalDate.now());
-                Book book = findBookByID(bookID);
-                if (book != null) {
-                    book.setAvailable(true);
-                }
-                saveAll();
+                System.err.println("This book has already been returned on " + loan.getReturnDate());
                 return;
             }
         }
-        System.err.println("Cannot return: Book not found:");
+        System.err.println("Cannot return: Book not found in loans");
     }
+
 
     public void listCurrentLoans() {
         LOANS.stream().filter(loan -> !loan.isReturned()).
